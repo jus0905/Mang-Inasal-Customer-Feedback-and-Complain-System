@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mang Inasal - Customer Feedback & Complaint Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <script src="tailwind.config.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
+
+    <!-- ================= 0. CUSTOMER FEEDBACK PAGE ================= -->
+    <div id="customerPage" class="fixed inset-0 bg-[#f6f1e8] overflow-y-auto z-40">
+        <header class="bg-[#a71930] text-white px-5 py-4 shadow-md">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-[#ffc72c] text-[#831d2c] font-extrabold px-3 py-1 rounded text-sm tracking-wide shadow">MANG INASAL</div>
+                    <span class="hidden sm:block text-xs text-red-100 font-semibold tracking-wide">CUSTOMER CARE</span>
+                </div>
+                <button id="goToAdminLoginBtn" class="border border-yellow-300 text-yellow-100 hover:bg-red-800 px-3 py-2 rounded text-xs font-semibold transition">
+                    <i class="fa-solid fa-lock mr-1"></i> Admin Login
+                </button>
+            </div>
+        </header>
+        <main class="max-w-7xl mx-auto px-5 py-8 md:py-12">
+            <div class="grid lg:grid-cols-[1fr_0.88fr] gap-8 xl:gap-14 items-stretch">
+                <section class="relative min-h-[560px] overflow-hidden rounded-2xl bg-[#7e1829] text-white shadow-xl">
+                    <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=1200&q=85" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=85'" alt="Grilled chicken inasal meal" class="absolute inset-0 h-full w-full object-cover opacity-45">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#4d101d] via-[#7e1829]/55 to-transparent"></div>
+                    <div class="relative flex h-full flex-col justify-between p-7 md:p-10">
+                        <div class="flex items-start justify-between">
+                            <div class="rounded-full bg-[#ffc72c] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#7e1829] shadow-lg">Kain na tayo!</div>
+                            <div class="rounded-full border border-white/40 bg-black/20 px-3 py-2 text-xs font-semibold backdrop-blur-sm"><i class="fa-solid fa-heart text-[#ffc72c] mr-1"></i> Your voice matters</div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-[0.28em] text-[#ffc72c]">We want to hear from you</p>
+                            <h1 class="mt-4 max-w-xl text-5xl font-black leading-[0.95] md:text-7xl">Make every meal better.</h1>
+                            <p class="mt-6 max-w-lg text-base leading-7 text-red-50 md:text-lg">Tell us about your Mang Inasal experience. A kind word, a concern, or a bright idea helps our store teams serve you better.</p>
+                            <div class="mt-8 grid max-w-lg grid-cols-2 gap-3">
+                                <div class="border-l-2 border-[#ffc72c] pl-3"><div class="text-2xl font-black">01</div><div class="text-xs text-red-100">Share your visit</div></div>
+                                <div class="border-l-2 border-[#ffc72c] pl-3"><div class="text-2xl font-black">02</div><div class="text-xs text-red-100">Get a reference</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section class="relative bg-white rounded-2xl shadow-xl border border-[#e8ddcc] p-6 md:p-9">
+                    <div class="absolute right-0 top-0 h-24 w-24 rounded-bl-[4rem] bg-[#ffc72c]/25"></div>
+                    <div id="feedbackIntro">
+                        <div class="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fbe7df] text-[#a71930] rotate-3"><i class="fa-solid fa-comment-dots text-xl -rotate-3"></i></div>
+                        <p class="mt-8 text-xs font-black uppercase tracking-[0.2em] text-[#a71930]">Your table is ready</p>
+                        <h2 class="text-3xl font-black text-slate-900 mt-2">Share your feedback</h2>
+                        <p class="text-sm leading-6 text-slate-500 mt-3">Compliment, question, or concern? Send it directly to our support team.</p>
+                        <div class="mt-8 border-y border-slate-100 py-5 text-sm text-slate-600">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-shield-heart w-5 text-[#a71930]"></i><span>Every message is reviewed by our team.</span></div>
+                            <div class="flex items-center gap-3 mt-4"><i class="fa-solid fa-receipt w-5 text-[#d18b00]"></i><span>Receive a reference number instantly.</span></div>
+                        </div>
+                        <button id="openFeedbackBtn" class="w-full mt-8 bg-[#a71930] hover:bg-[#831d2c] text-white font-bold py-3.5 rounded-lg shadow-lg transition text-sm">
+                            <i class="fa-solid fa-pen-to-square mr-2"></i> Add Feedback
+                        </button>
+                    </div>
+                    <form id="feedbackForm" class="hidden space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div><p class="text-xs font-black uppercase tracking-[0.2em] text-[#a71930]">Customer care</p><h2 class="text-2xl font-black text-slate-800 mt-1">New feedback</h2></div>
+                            <button type="button" id="cancelFeedbackBtn" class="text-slate-400 hover:text-slate-700 text-lg" aria-label="Close feedback form">&times;</button>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="customerName">Your Name</label>
+                            <input type="text" id="customerName" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="customerEmail">Your Email</label>
+                            <input type="email" id="customerEmail" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                        </div>
+                        <!-- Customer Rating Dropdown (1-5 Stars) -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="customerRating">
+                                Customer Rating (1 - 5) <span class="text-red-500">*</span>
+                            </label>
+                            <select id="customerRating" required class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                                <option value="" disabled selected>Select Rating</option>
+                                <option value="5">5 Stars - Excellent ⭐⭐⭐⭐⭐</option>
+                                <option value="4">4 Stars - Very Good ⭐⭐⭐⭐</option>
+                                <option value="3">3 Stars - Good ⭐⭐⭐</option>
+                                <option value="2">2 Stars - Fair ⭐⭐</option>
+                                <option value="1">1 Star - Poor ⭐</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="feedbackCategory">Topic</label>
+                                <select id="feedbackCategory" required class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                                    <option>Food Quality</option><option>Service Speed</option><option>Staff Service</option><option>Cleanliness</option><option>Store Facilities</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="feedbackBranch">Branch</label>
+                                <select id="feedbackBranch" required class="w-full px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                                    <option>SM Megamall</option><option>Market! Market!</option><option>Trinoma</option><option>Greenbelt</option><option>MOA Complex</option><option>BGC High Street</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1" for="feedbackMessage">Feedback / Complaint</label>
+                            <textarea id="feedbackMessage" rows="4" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg shadow transition duration-200 text-sm">
+                            <i class="fa-solid fa-paper-plane mr-2"></i> Submit Feedback
+                        </button>
+                    </form>
+                    <div id="feedbackSuccess" class="hidden text-center py-6">
+                        <div class="w-14 h-14 mx-auto rounded-full bg-green-100 text-green-700 flex items-center justify-center"><i class="fa-solid fa-check text-2xl"></i></div>
+                        <h2 class="text-xl font-black text-slate-800 mt-4">Thank you for telling us.</h2>
+                        <p class="text-sm text-slate-500 mt-2">Your reference number is <strong id="customerReference" class="text-red-700"></strong>.</p>
+                        <button id="newFeedbackBtn" class="mt-6 text-sm font-bold text-red-700 hover:underline">Send another response</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= 1. ADMIN LOGIN PAGE ================= -->
+    <div id="loginPage" class="hidden fixed inset-0 bg-gradient-to-br from-red-700 via-yellow-600 to-amber-800 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 border-t-8 border-yellow-400">
+            <div class="text-center mb-6">
+                <div class="inline-block bg-yellow-400 text-red-700 font-black text-2xl px-4 py-2 rounded-lg shadow mb-2">MANG INASAL</div>
+                <h2 class="text-xl font-bold text-slate-700">Admin Portal Log In</h2>
+                <p class="text-xs text-slate-500 mt-1">Customer Feedback & Complaint Management System</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Admin Username</label>
+                    <input type="text" id="loginUser" autocomplete="username" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" value="admin.juandelacruz">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Password</label>
+                    <input type="password" id="loginPass" autocomplete="current-password" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" value="12341234">
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg shadow transition duration-200 text-sm">
+                    Log In to Dashboard
+                </button>
+                <p id="loginError" class="hidden text-center text-xs font-semibold text-red-600" role="alert"></p>
+            </form>
+            <div class="mt-4 text-center text-xs text-slate-400">
+                Secure Operations Access v2.6
+                <br><button id="goToCustomerFeedbackBtn" class="text-xs text-red-600 hover:underline mt-2">Back to Customer Portal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP WRAPPER ================= -->
+    <div id="appContainer" class="flex flex-col h-screen hidden">
+        
+        <!-- TOP HEADER BAR -->
+        <header class="bg-red-700 text-white shadow-md flex items-center justify-between px-4 py-2 z-30">
+            <div class="flex items-center space-x-3">
+                <div class="bg-yellow-400 text-red-800 font-extrabold px-3 py-1 rounded text-sm tracking-wide shadow">MANG INASAL</div>
+                <span class="font-semibold text-sm hidden md:inline">Customer Feedback & Complaint Management System (Main Admin Panel)</span>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Search Bar (Functional for ticket reference) -->
+                <div class="relative hidden sm:block">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fa-solid fa-search text-xs"></i>
+                    </span>
+                    <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="Search Reference No. (e.g. REF-10024)..." class="pl-9 pr-4 py-1.5 bg-white text-slate-800 rounded-full text-xs w-64 focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-inner">
+                </div>
+
+                <!-- Notification Floating Trigger / Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotificationPopup()" class="relative text-yellow-300 hover:text-white p-2 rounded-full focus:outline-none">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        <span id="notifBadge" class="absolute top-1 right-1 bg-yellow-400 text-red-900 text-[10px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+                    </button>
+                    
+                    <!-- Notification Floating Bar Pop-up -->
+                    <div id="notificationPopup" class="hidden absolute right-0 mt-2 w-80 bg-white text-slate-800 rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+                        <div class="bg-red-600 text-white px-4 py-2 text-xs font-bold flex justify-between items-center">
+                            <span>Feedback Notifications</span>
+                            <span class="cursor-pointer text-yellow-300 hover:underline" onclick="toggleNotificationPopup()">Close</span>
+                        </div>
+                        <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto text-xs" id="notificationList">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Profile Info -->
+                <div class="flex items-center space-x-2 border-l border-red-600 pl-4">
+                    <img id="headerAvatar" src="userimg.jpg" alt="Admin Profile" class="w-8 h-8 rounded-full border border-yellow-400 object-cover bg-white">
+                    <div class="text-left hidden lg:block">
+                        <div id="headerAdminName" class="text-xs font-bold leading-tight">Juan Dela Cruz</div>
+                        <div class="text-[10px] text-yellow-200 leading-tight">Operations Admin</div>
+                    </div>
+                </div>
+
+                <button onclick="handleLogout()" class="bg-red-800 hover:bg-red-900 text-yellow-300 border border-yellow-400/50 px-3 py-1 rounded text-xs font-semibold shadow transition">
+                    Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- CONTENT BODY WITH SIDEBAR -->
+        <div class="flex flex-1 overflow-hidden">
+            
+            <!-- SIDEBAR NAVIGATION -->
+            <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between sidebar-transition overflow-y-auto text-xs">
+                <div class="py-2">
+                    <nav class="space-y-0.5">
+                        <a href="#" onclick="switchPage('dashboard')" id="nav-dashboard" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-chart-pie w-6"></i> Dashboard
+                        </a>
+                        <a href="#" onclick="switchPage('tickets')" id="nav-tickets" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-ticket w-6"></i> All Tickets
+                        </a>
+                        <a href="#" onclick="switchPage('pending')" id="nav-pending" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-clock w-6"></i> Pending
+                        </a>
+                        <a href="#" onclick="switchPage('inprogress')" id="nav-inprogress" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-spinner w-6"></i> In Progress
+                        </a>
+                        <a href="#" onclick="switchPage('resolved')" id="nav-resolved" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-circle-check w-6"></i> Resolved
+                        </a>
+                        <a href="#" onclick="switchPage('archived')" id="nav-archived" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-box-archive w-6"></i> Archived
+                        </a>
+
+                        <div class="pt-3 pb-1 px-4 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Categories:</div>
+                        <a href="#" onclick="switchCategory('Food Quality')" id="nav-cat-food" class="nav-item flex items-center px-6 py-2 font-medium hover:bg-slate-800 hover:text-white">
+                            <i class="fa-solid fa-utensils w-5"></i> Food Quality
+                        </a>
+                        <a href="#" onclick="switchCategory('Service Speed')" id="nav-cat-speed" class="nav-item flex items-center px-6 py-2 font-medium hover:bg-slate-800 hover:text-white">
+                            <i class="fa-solid fa-bolt w-5"></i> Service Speed
+                        </a>
+                        <a href="#" onclick="switchCategory('Cleanliness')" id="nav-cat-clean" class="nav-item flex items-center px-6 py-2 font-medium hover:bg-slate-800 hover:text-white">
+                            <i class="fa-solid fa-broom w-5"></i> Cleanliness
+                        </a>
+                        <a href="#" onclick="switchCategory('Staff Service')" id="nav-cat-staff" class="nav-item flex items-center px-6 py-2 font-medium hover:bg-slate-800 hover:text-white">
+                            <i class="fa-solid fa-user-tie w-5"></i> Staff Service
+                        </a>
+                        <a href="#" onclick="switchCategory('Store Facilities')" id="nav-cat-facilities" class="nav-item flex items-center px-6 py-2 font-medium hover:bg-slate-800 hover:text-white">
+                            <i class="fa-solid fa-store w-5"></i> Store Facilities
+                        </a>
+
+                        <div class="pt-3 pb-1 px-4 text-[10px] uppercase font-bold text-slate-500 tracking-wider">Management</div>
+                        <a href="#" onclick="switchPage('staff')" id="nav-staff" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-users w-6"></i> Staff / User
+                        </a>
+                        <a href="#" onclick="switchPage('reports')" id="nav-reports" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-chart-column w-6"></i> Reports
+                        </a>
+                        <a href="#" onclick="switchPage('settings')" id="nav-settings" class="nav-item flex items-center px-4 py-2.5 font-medium hover:bg-slate-800 hover:text-white border-l-4 border-transparent">
+                            <i class="fa-solid fa-gear w-6"></i> Settings & Profile
+                        </a>
+                    </nav>
+                </div>
+                <div class="p-4 bg-slate-950 text-center text-[10px] text-slate-500">
+                    Customer Feedback & Complaint Management System (Main Admin Panel)
+                </div>
+            </aside>
+
+            <!-- MAIN VIEW CONTAINER -->
+            <main class="flex-1 bg-slate-100 overflow-y-auto p-6" id="mainContentArea">
+                
+                <!-- PAGE 1: DASHBOARD -->
+                <section id="page-dashboard" class="page-section space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-600">
+                            <div class="text-slate-500 text-xs font-bold uppercase">Total Submissions</div>
+                            <div id="statTotal" class="text-2xl font-black mt-1 text-slate-800">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-amber-500">
+                            <div class="text-slate-500 text-xs font-bold uppercase">Pending / In-Progress</div>
+                            <div id="statActive" class="text-2xl font-black mt-1 text-amber-600">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-600">
+                            <div class="text-slate-500 text-xs font-bold uppercase">Resolved Complaints</div>
+                            <div id="statResolved" class="text-2xl font-black mt-1 text-green-600">0</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                            <div class="text-slate-500 text-xs font-bold uppercase">Avg. Resolution Time</div>
+                            <div class="text-2xl font-black mt-1 text-blue-600">1.2 Days</div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+                            <div class="text-slate-500 text-xs font-bold uppercase">Overall CSAT Score</div>
+                            <div id="statCSAT" class="text-2xl font-black mt-1 text-amber-500">0.0 / 5</div>
+                        </div>
+                    </div>
+
+                    <!-- Ticket List Quick View Table -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-700 text-base">Customer Feedback & Complaints Submissions</h3>
+                            <div class="space-x-2">
+                                <button onclick="filterTicketStatus('All')" class="px-3 py-1 bg-slate-200 text-xs rounded hover:bg-slate-300 font-semibold">All</button>
+                                <button onclick="filterTicketStatus('Pending')" class="px-3 py-1 bg-amber-100 text-amber-800 text-xs rounded hover:bg-amber-200 font-semibold">Pending</button>
+                                <button onclick="filterTicketStatus('In Progress')" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded hover:bg-blue-200 font-semibold">In Progress</button>
+                                <button onclick="filterTicketStatus('Resolved')" class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded hover:bg-green-200 font-semibold">Resolved</button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference No.</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboardTicketTableBody" class="divide-y divide-slate-100">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 2: ALL TICKETS / TICKET QUEUE -->
+                <section id="page-tickets" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-700 text-base">All Master Tickets Directory</h3>
+                            <span class="text-xs text-slate-500">Live ticket queue & lifecycle management</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Ticket Sender</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="allTicketsTableBody" class="divide-y divide-slate-100">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 3: PENDING TICKETS -->
+                <section id="page-pending" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-amber-500">
+                        <h3 class="font-bold text-slate-700 text-base mb-4">Pending Tickets Queue</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-amber-50 text-amber-900 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pendingTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 4: IN PROGRESS TICKETS -->
+                <section id="page-inprogress" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-blue-500">
+                        <h3 class="font-bold text-slate-700 text-base mb-4">In Progress Tickets Queue</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-blue-50 text-blue-900 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inprogressTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 5: RESOLVED TICKETS -->
+                <section id="page-resolved" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-green-500">
+                        <h3 class="font-bold text-slate-700 text-base mb-4">Resolved Tickets (Ready for Archive Option)</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-green-50 text-green-900 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resolvedTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 6: ARCHIVED TICKETS -->
+                <section id="page-archived" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6 border-t-4 border-slate-600">
+                        <h3 class="font-bold text-slate-700 text-base mb-4">Archived Tickets Repository</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-200 text-slate-700 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="archivedTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 7: CATEGORIES DEEP DIVE -->
+                <section id="page-categories" class="page-section hidden space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow flex justify-between items-center">
+                        <div>
+                            <h3 id="catTitle" class="text-lg font-bold text-slate-800">Food Quality Analytics</h3>
+                            <p class="text-xs text-slate-500">Detailed category metrics and active feedback statistics (excludes archived tickets)</p>
+                        </div>
+                        <select id="categorySelector" onchange="switchCategory(this.value)" class="border px-3 py-1.5 rounded text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 bg-slate-50">
+                            <option value="Food Quality">Food Quality</option>
+                            <option value="Service Speed">Service Speed</option>
+                            <option value="Staff Service">Staff Service</option>
+                            <option value="Cleanliness">Cleanliness</option>
+                            <option value="Store Facilities">Store Facilities</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-600">
+                            <div id="catCardTitle1" class="text-xs font-bold text-slate-400 uppercase">Total Active Feedback Tickets</div>
+                            <div id="catMetric1" class="text-3xl font-black text-slate-800 mt-2">0</div>
+                            <div class="text-xs text-green-600 mt-1"><i class="fa-solid fa-arrow-up"></i> +4.2% vs last month</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-amber-500">
+                            <div id="catCardTitle2" class="text-xs font-bold text-slate-400 uppercase">Primary Focus</div>
+                            <div id="catMetric2" class="text-xl font-black text-slate-800 mt-2">Quality Audit</div>
+                            <div class="text-xs text-slate-500 mt-1">Requiring QA audit</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-600">
+                            <div id="catCardTitle3" class="text-xs font-bold text-slate-400 uppercase">Category CSAT</div>
+                            <div id="catMetric3" class="text-3xl font-black text-slate-800 mt-2">0.0 / 5.0</div>
+                            <div class="text-xs text-blue-600 mt-1">Calculated from Active Tickets</div>
+                        </div>
+                    </div>
+
+                    <!-- Category Linked Tickets Table -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h4 class="font-bold text-slate-700 text-sm mb-4">Active Tickets Associated with <span id="currentCatNameText">Food Quality</span></h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 uppercase">
+                                    <tr>
+                                        <th class="p-3">Reference ID</th>
+                                        <th class="p-3">Date & Time</th>
+                                        <th class="p-3">Customer</th>
+                                        <th class="p-3">Rating</th>
+                                        <th class="p-3">Priority</th>
+                                        <th class="p-3">Branch</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categoryTicketsTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 8: STAFF / USERS PAGE -->
+                <section id="page-staff" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Staff & System Users Directory</h3>
+                            <p class="text-xs text-slate-500">Active personnel aged 20-30 managing store operations</p>
+                        </div>
+                        <button onclick="openAddStaffModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded text-xs shadow flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-user-plus"></i> + Add New Staff / User
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 uppercase">
+                                    <tr>
+                                        <th class="p-3">Staff Profile</th>
+                                        <th class="p-3">Full Name</th>
+                                        <th class="p-3">Age</th>
+                                        <th class="p-3">Email Address</th>
+                                        <th class="p-3">Role / Branch</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="staffTableBody" class="divide-y divide-slate-100">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 9: REPORTS PAGE -->
+                <section id="page-reports" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">Performance Analytics & Reports</h3>
+                        <p class="text-xs text-slate-500 mb-6">Overall performance, CSAT scores, complaints breakdown including historical archived tickets.</p>
+                        
+                        <div class="grid grid-cols-1 gap-6">
+                            <!-- Status Distribution Bar Graph Representation -->
+                            <div class="bg-slate-50 border p-4 rounded-lg">
+                                <h4 class="font-bold text-xs text-slate-700 uppercase mb-3"><i class="fa-solid fa-chart-column text-red-600 mr-1"></i> All Tickets Status Breakdown (Includes Archived)</h4>
+                                <div class="space-y-3 pt-2" id="reportsStatusBreakdownContainer">
+                                    <!-- Dynamically Populated -->
+                                </div>
+                            </div>
+
+                            <!-- Category Ratio Breakdown -->
+                            <div class="bg-slate-50 border p-4 rounded-lg">
+                                <h4 class="font-bold text-xs text-slate-700 uppercase mb-3"><i class="fa-solid fa-pie-chart text-red-600 mr-1"></i> Complaint Category Distribution (Includes Archived)</h4>
+                                <div class="space-y-2 text-xs pt-2" id="reportsCategoryBreakdownContainer">
+                                    <!-- Dynamically Populated -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PAGE 10: SETTINGS & PROFILE PAGE -->
+                <section id="page-settings" class="page-section hidden space-y-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">Settings & Admin Profile</h3>
+                        <p class="text-xs text-slate-500 mb-6">Manage personal profile credentials, branch configurations, and team permissions.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Profile Section -->
+                            <div class="border rounded-lg p-5 bg-slate-50 space-y-4">
+                                <h4 class="font-bold text-sm text-red-700 border-b pb-2"><i class="fa-solid fa-user-shield mr-2"></i> Admin Profile</h4>
+                                <div class="flex items-center space-x-4">
+                                    <img id="profilePreviewImg" src="userimg.jpg" class="w-16 h-16 rounded-full border-2 border-red-600 object-cover bg-white">
+                                    <div class="space-y-1">
+                                        <input type="file" id="adminAvatarFile" accept="image/*" class="hidden" onchange="handleAdminAvatarChange(event)">
+                                        <button type="button" onclick="document.getElementById('adminAvatarFile').click()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded text-xs shadow transition">
+                                            <i class="fa-solid fa-camera mr-1"></i> Change picture
+                                        </button>
+                                        <p class="text-[10px] text-slate-500">Choose an image file (max 2 MB).</p>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Admin Age</label>
+                                        <input type="number" id="inputAdminAge" value="28" min="18" max="100" required class="w-full text-xs px-2 py-1.5 border rounded">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Mobile Number</label>
+                                        <input type="tel" id="inputAdminMobile" value="+63 917 555 1234" required class="w-full text-xs px-2 py-1.5 border rounded">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Email Address</label>
+                                    <input type="email" id="inputAdminEmail" value="juan.delacruz@manginasal.com" required class="w-full text-xs px-2 py-1.5 border rounded">
+                                </div>
+                                <div class="pt-4">
+                                    <button onclick="saveSettings()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition">
+                                        Save Profile Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= STAFF / USER MODAL (ADD & EDIT) ================= -->
+    <div id="staffModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden border-t-8 border-red-600">
+            <div class="bg-red-700 text-white px-5 py-3 flex justify-between items-center">
+                <h3 id="staffModalTitle" class="font-bold text-sm">Add New Staff / User</h3>
+                <button onclick="closeStaffModal()" class="text-yellow-300 hover:text-white font-bold text-base">&times;</button>
+            </div>
+            <form id="staffForm" onsubmit="handleStaffFormSubmit(event)" class="p-6 space-y-4 text-xs">
+                <div class="flex flex-col items-center justify-center space-y-2 border-b pb-3">
+                    <img id="staffFormPhotoPreview" src="userimg.jpg" class="w-16 h-16 rounded-full border-2 border-red-600 object-cover bg-white shadow-md">
+                    <span class="text-[11px] text-slate-400 italic">User Profile Image</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Full Name</label>
+                    <input type="text" id="staffFullName" required placeholder="e.g. Juan Dela Cruz" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-xs">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Age</label>
+                        <input type="number" id="staffAge" min="18" max="70" required placeholder="24" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Email Address</label>
+                        <input type="email" id="staffEmail" required placeholder="user@manginasal.com" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-xs">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Role / Branch</label>
+                    <input type="text" id="staffRole" required placeholder="e.g. Shift Lead / SM Megamall" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-xs">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeStaffModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded text-xs transition">Cancel</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition">Save Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= REPORT SUBMISSION CONFIRMATION MODAL ================= -->
+    <div id="reportConfirmModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[90] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border-t-8 border-amber-500">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">Confirming for submission of Report</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Are you sure you want to finalize and submit this report to store management?
+                </p>
+                <div class="pt-2 flex justify-center space-x-3">
+                    <button onclick="closeReportConfirmModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded text-xs transition">Cancel</button>
+                    <button onclick="confirmSubmitReport()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= RESOLUTION CONFIRMATION MODAL ================= -->
+    <div id="resolveConfirmModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border-t-8 border-green-600">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-circle-question"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">Confirm Resolution</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Are you sure you want to put ticket <strong id="resolveTicketIdText" class="text-slate-800"></strong> as <span class="text-green-700 font-bold">Resolved</span>?
+                </p>
+                <div class="pt-2 flex justify-center space-x-3">
+                    <button onclick="closeResolveModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded text-xs transition">Cancel</button>
+                    <button onclick="confirmResolveTicket()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition">Yes, Mark as Resolved</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= ARCHIVE CONFIRMATION MODAL ================= -->
+    <div id="archiveConfirmModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border-t-8 border-slate-700">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-12 h-12 bg-slate-100 text-slate-700 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-box-archive"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">Confirm Archiving</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Are you sure you want to move ticket <strong id="archiveTicketIdText" class="text-slate-800"></strong> to <span class="text-slate-700 font-bold">Archived</span>?
+                </p>
+                <div class="pt-2 flex justify-center space-x-3">
+                    <button onclick="closeArchiveModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded text-xs transition">Cancel</button>
+                    <button onclick="confirmArchiveTicket()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded text-xs shadow transition">Yes, Move to Archived</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= SUSPEND / REMOVAL CONFIRMATION MODAL ================= -->
+    <div id="suspendModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden border-t-8 border-red-600">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="font-bold text-slate-800 text-base">Removal Confirmation</h3>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Are you sure you want to suspend / remove <strong id="suspendStaffName" class="text-slate-800"></strong> from the system?
+                </p>
+                <div class="pt-2 flex justify-center space-x-3">
+                    <button onclick="closeSuspendModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded text-xs transition">Cancel</button>
+                    <button id="confirmSuspendBtn" onclick="confirmSuspendStaff()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition">Yes, Remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TICKET VIEW MODAL ================= -->
+    <div id="ticketModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border-t-8 border-red-600">
+            <div class="bg-red-700 text-white px-5 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm">Ticket Complete Details</h3>
+                <button onclick="closeModal()" class="text-yellow-300 hover:text-white font-bold text-base">&times;</button>
+            </div>
+            <div class="p-6 space-y-3 text-xs" id="modalContentBody">
+                <!-- Injected via JS -->
+            </div>
+            <div class="bg-slate-50 px-5 py-3 flex justify-between items-center border-t">
+                <div id="modalActionContainer">
+                    <!-- Dynamic state action buttons -->
+                </div>
+                <button onclick="closeModal()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold px-4 py-1.5 rounded text-xs">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAKE A REPORT MODAL ================= -->
+    <div id="makeReportModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[80] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border-t-8 border-amber-500">
+            <div class="bg-amber-600 text-white px-5 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-file-circle-plus mr-1.5"></i> Make a Report to Branch</h3>
+                <button onclick="cancelReport()" class="text-yellow-200 hover:text-white font-bold text-base">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-2 bg-amber-50 p-3 rounded border border-amber-200">
+                    <div><span class="font-semibold text-slate-500">Customer Rating:</span> <span id="reportRating" class="font-bold"></span></div>
+                    <div><span class="font-semibold text-slate-500">Category:</span> <span id="reportCategory" class="font-bold text-slate-800"></span></div>
+                    <div><span class="font-semibold text-slate-500">Branch:</span> <span id="reportBranch" class="font-bold text-slate-800"></span></div>
+                    <div><span class="font-semibold text-slate-500">Date & Time:</span> <span id="reportDateTime" class="text-slate-700"></span></div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Customer Complaint Message:</label>
+                    <p id="reportCustomerComplaint" class="bg-slate-100 p-3 rounded border text-slate-700 italic"></p>
+                </div>
+
+                <div>
+                    <label for="adminReportText" class="block font-bold text-slate-700 mb-1">Admin Report / Directives to Mang Inasal Branch:</label>
+                    <textarea id="adminReportText" rows="4" placeholder="Write admin findings, operational instructions, or resolution directives for store branch management..." class="w-full p-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs bg-white"></textarea>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-5 py-3 flex justify-between items-center border-t">
+                <button onclick="cancelReport()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3.5 py-2 rounded text-xs transition">
+                    Cancel Report
+                </button>
+                <button onclick="promptConfirmReport()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded text-xs shadow transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-paper-plane"></i> File the Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script src="script.js"></script>
+    
+</body>
+</html>

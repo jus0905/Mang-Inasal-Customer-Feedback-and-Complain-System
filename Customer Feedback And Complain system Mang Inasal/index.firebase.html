@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Firebase Realtime DB Example</title>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px}input{padding:8px;margin-right:8px}</style>
+</head>
+<body>
+  <h1>Firebase Realtime DB Example</h1>
+  <p>Type a message and click Send — messages are stored in Realtime Database.</p>
+  <input id="msg" placeholder="message" />
+  <button id="send">Send</button>
+  <div id="status" style="margin-top:12px;color:#444"></div>
+  <ul id="list"></ul>
+
+  <!-- Firebase compat SDK (simple for demos) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script>
+    // Config using values you provided (apiKey + databaseURL).
+    // I included placeholders for other fields — replace if you have them.
+    const firebaseConfig = {
+      apiKey: "dALshn0vgvj4dlZUYq4AF1ltMJgMsvqVLFqeVtlc",
+      authDomain: "mang-inasal-ec7c5.firebaseapp.com",
+      databaseURL: "https://mang-inasal-ec7c5-default-rtdb.firebaseio.com/",
+      projectId: "mang-inasal-ec7c5",
+      storageBucket: "mang-inasal-ec7c5.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+    } catch (e) {
+      console.error('Firebase init error', e);
+      document.getElementById('status').textContent = 'Firebase init error: ' + e.message;
+      throw e;
+    }
+    const db = firebase.database();
+
+    const list = document.getElementById('list');
+    const send = document.getElementById('send');
+    const msg = document.getElementById('msg');
+
+    send.addEventListener('click', () => {
+      const text = msg.value.trim();
+      if (!text) return;
+      send.disabled = true;
+      document.getElementById('status').textContent = 'Sending...';
+      db.ref('messages').push({ text, created: Date.now() })
+        .then(() => {
+          msg.value = '';
+          document.getElementById('status').textContent = 'Last write: ' + new Date().toLocaleTimeString();
+        })
+        .catch(err => {
+          console.error('Write failed', err);
+          document.getElementById('status').textContent = 'Write failed: ' + err.message;
+        })
+        .finally(() => { send.disabled = false; });
+    });
+
+    // Show connection status from Realtime Database
+    db.ref('.info/connected').on('value', snap => {
+      const connected = snap.val();
+      document.getElementById('status').textContent = connected ? 'Connected to RTDB' : 'Not connected to RTDB';
+      console.log('.info/connected ->', connected);
+    }, err => {
+      console.error('.info/connected error', err);
+      document.getElementById('status').textContent = 'Connection check failed: ' + err.message;
+    });
+
+    // Listen for last 20 messages and render them live (with error handler)
+    db.ref('messages').limitToLast(20).on('value', snapshot => {
+      list.innerHTML = '';
+      snapshot.forEach(child => {
+        const v = child.val();
+        const li = document.createElement('li');
+        li.textContent = new Date(v.created).toLocaleTimeString() + ' — ' + v.text;
+        list.appendChild(li);
+      });
+    }, err => {
+      console.error('Read failed', err);
+      document.getElementById('status').textContent = 'Read failed: ' + err.message;
+    });
+  </script>
+</body>
+</html>
